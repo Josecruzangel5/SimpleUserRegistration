@@ -153,7 +153,7 @@ def profile():
         return response
     
     # Obtain user asocciated to session
-    user = User.query.get(session_record.user_id)
+    user = session_record.user
     if not user:
         flash('Usuario no encontrado.', 'danger')
         response = redirect(url_for('auth.login'))
