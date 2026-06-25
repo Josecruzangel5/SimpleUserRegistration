@@ -107,7 +107,7 @@ def login():
         db.session.commit()
         
         # Create response and establish cookie
-        response = make_response(render_template('dashboard.html', full_name=user.full_name))
+        response = redirect(url_for('auth.dashboard'))
         response.set_cookie('session_id', session_id, httponly=True, samesite='Lax')
         return response
     else:
@@ -179,3 +179,28 @@ def profile():
     
     flash('Name updated sucesfully.', 'success')
     return redirect(url_for('auth.profile'))
+
+@auth_bp.route('/dashboard')
+def dashboard():
+    # Verificar sesión activa
+    session_id = request.cookies.get('session_id')
+    if not session_id:
+        flash('Debes iniciar sesión para acceder al dashboard.', 'warning')
+        return redirect(url_for('auth.login'))
+    
+    session_record = Session.query.filter_by(id=session_id).first()
+    if not session_record:
+        flash('Sesión inválida. Inicia sesión nuevamente.', 'warning')
+        response = redirect(url_for('auth.login'))
+        response.delete_cookie('session_id')
+        return response
+    
+    # Obtener usuario
+    user = session_record.user
+    if not user:
+        flash('Usuario no encontrado.', 'danger')
+        response = redirect(url_for('auth.login'))
+        response.delete_cookie('session_id')
+        return response
+    
+    return render_template('dashboard.html', full_name=user.full_name)
