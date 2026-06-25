@@ -134,3 +134,48 @@ def logout():
     response.delete_cookie('session_id')
     flash('Logged Out.', 'info')
     return response
+
+
+@auth_bp.route('/profile', methods=['GET', 'POST'])
+def profile():
+    # verifiy user has an active session
+    session_id = request.cookies.get('session_id')
+    if not session_id:
+        flash('Debes iniciar sesión para acceder a esta página.', 'warning')
+        return redirect(url_for('auth.login'))
+    
+    # look for the session on the database 
+    session_record = Session.query.filter_by(id=session_id).first()
+    if not session_record:
+        flash('Sesión inválida. Inicia sesión nuevamente.', 'warning')
+        response = redirect(url_for('auth.login'))
+        response.delete_cookie('session_id')
+        return response
+    
+    # Obtain user asocciated to session
+    user = User.query.get(session_record.user_id)
+    if not user:
+        flash('Usuario no encontrado.', 'danger')
+        response = redirect(url_for('auth.login'))
+        response.delete_cookie('session_id')
+        return response
+    
+    #If GET, display the form with the current name
+    if request.method == 'GET':
+        return render_template('profile.html', user=user)
+    
+    # POST: process name update
+    new_full_name = request.form.get('full_name', '').strip()
+    
+    # Validate new name
+    valid_name, msg_name = is_valid_name(new_full_name)
+    if not valid_name:
+        flash(msg_name, 'danger')
+        return render_template('profile.html', user=user), 400
+    
+    # Update name on DB
+    user.full_name = new_full_name
+    db.session.commit()
+    
+    flash('Name updated sucesfully.', 'success')
+    return redirect(url_for('auth.profile'))

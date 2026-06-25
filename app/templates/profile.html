@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Mi Perfil{% endblock %}
+
+{% block content %}
+<h2>Update Profile</h2>
+
+<div class="card">
+    <div class="card-body">
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Nombre actual:</strong> {{ user.full_name }}</p>
+        
+        <form method="POST" action="/profile">
+            <div class="mb-3">
+                <label for="full_name" class="form-label">New full name</label>
+                <input type="text" class="form-control" id="full_name" name="full_name" 
+                       value="{{ user.full_name }}" required>
+                <div class="form-text">name must have 5 characters.</div>
+            </div>
+            <button type="submit" class="btn btn-primary">Update name</button>
+            <a href="/dashboard" class="btn btn-secondary">Back to dashboard</a>
+        </form>
+    </div>
+</div>s
+{% endblock %}
