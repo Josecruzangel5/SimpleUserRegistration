@@ -121,3 +121,17 @@ def login():
             flash('Invalid Credentials.', 'danger')
         db.session.commit()
         return render_template('login.html'), 401
+
+        
+        @auth_bp.route('/logout')
+def logout():
+    session_id = request.cookies.get('session_id')
+    if session_id:
+        session = Session.query.filter_by(id=session_id).first()
+        if session:
+            db.session.delete(session)
+            db.session.commit()
+    response = redirect(url_for('auth.login'))
+    response.delete_cookie('session_id')
+    flash('Logged Out.', 'info')
+    return response

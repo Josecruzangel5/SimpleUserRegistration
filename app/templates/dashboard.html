@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome!{% endblock %}
+
+{% block content %}
+<div class="alert alert-success">
+    <h4>Welcome, {{ full_name }}!</h4>
+    <p>To log out click <a href="/logout">here</a>.</p>
+</div>
+{% endblock %}
