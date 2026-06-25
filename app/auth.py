@@ -14,7 +14,6 @@ def signup():
     if request.method == 'GET':
         return render_template('signup.html')
     
-    
     email = request.form.get('email', '').strip()
     full_name = request.form.get('full_name', '').strip()
     password = request.form.get('password', '')
@@ -22,7 +21,7 @@ def signup():
     # validate mail
     try:
         valid = validate_email(email)
-        email = valid.email  
+        email = valid.email
     except EmailNotValidError:
         flash('invalid email.', 'danger')
         return render_template('signup.html'), 400
@@ -48,7 +47,7 @@ def signup():
     # hash password
     hashed = hash_password(password)
     
-    # create user 
+    # create user
     new_user = User(email=email, full_name=full_name, password_hash=hashed)
     db.session.add(new_user)
     
@@ -58,7 +57,7 @@ def signup():
         return redirect(url_for('auth.login'))
     except IntegrityError:
         db.session.rollback()
-        flash('Error while saving user, try agaain', 'danger')
+        flash('Error while saving user, try again', 'danger')
         return render_template('signup.html'), 500
 
 
@@ -107,7 +106,7 @@ def login():
         db.session.add(new_session)
         db.session.commit()
         
-        # Create response and establish cookie 
+        # Create response and establish cookie
         response = make_response(render_template('dashboard.html', full_name=user.full_name))
         response.set_cookie('session_id', session_id, httponly=True, samesite='Lax')
         return response
@@ -122,8 +121,8 @@ def login():
         db.session.commit()
         return render_template('login.html'), 401
 
-        
-        @auth_bp.route('/logout')
+
+@auth_bp.route('/logout')
 def logout():
     session_id = request.cookies.get('session_id')
     if session_id:
