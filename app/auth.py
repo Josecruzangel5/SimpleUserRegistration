@@ -60,3 +60,64 @@ def signup():
         db.session.rollback()
         flash('Error while saving user, try agaain', 'danger')
         return render_template('signup.html'), 500
+
+
+@auth_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'GET':
+        return render_template('login.html')
+    
+    # POST
+    email = request.form.get('email', '').strip()
+    password = request.form.get('password', '')
+    
+    # search user by email
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        flash('Invalid Credentials.', 'danger')
+        return render_template('login.html'), 401
+    
+    now = datetime.utcnow()
+    
+    # Verify block
+    if user.locked_until and user.locked_until > now:
+        remaining = (user.locked_until - now).seconds // 60  # minutes
+        flash(f'Account blocked for {remaining} minutes.', 'danger')
+        return render_template('login.html'), 403
+    
+    # if block expired, reset counter
+    if user.locked_until and user.locked_until < now:
+        user.failed_attempts = 0
+        user.locked_until = None
+        db.session.commit()
+    
+    # verify password
+    if check_password(password, user.password_hash):
+        # Login succesful: reset tries and block
+        user.failed_attempts = 0
+        user.locked_until = None
+        db.session.commit()
+        
+        # Eliminate previous session
+        Session.query.filter_by(user_id=user.id).delete()
+        
+        # Create new session
+        session_id = str(uuid.uuid4())
+        new_session = Session(id=session_id, user_id=user.id, created_at=now, last_activity=now)
+        db.session.add(new_session)
+        db.session.commit()
+        
+        # Create response and establish cookie 
+        response = make_response(render_template('dashboard.html', full_name=user.full_name))
+        response.set_cookie('session_id', session_id, httponly=True, samesite='Lax')
+        return response
+    else:
+        # Login failed
+        user.failed_attempts += 1
+        if user.failed_attempts >= 3:
+            user.locked_until = datetime.utcnow() + timedelta(hours=2)
+            flash('Too many tries. Account locked for 2 hours.', 'danger')
+        else:
+            flash('Invalid Credentials.', 'danger')
+        db.session.commit()
+        return render_template('login.html'), 401
